@@ -15,9 +15,14 @@ events = {
 st.title("🧠 歴史的出来事 並び替えゲーム")
 st.write("以下の出来事を **古い順** に並び替えてください。")
 
+# 新しい問題をリクエストされたとき
+if "new_problem" not in st.session_state:
+    st.session_state.new_problem = True
+
 # セッションに保存されたイベントがなければ作成
-if "sample_events" not in st.session_state:
+if "sample_events" not in st.session_state or st.session_state.new_problem:
     st.session_state.sample_events = random.sample(list(events.items()), 4)
+    st.session_state.new_problem = False  # フラグを下げる
 
 # 現在の出来事を取得
 sample_events = st.session_state.sample_events
@@ -39,7 +44,8 @@ if st.button("判定する"):
         for i, name in enumerate(correct_names, 1):
             st.write(f"{i}. {name}（{events[name]}年）")
 
-# 新しい問題ボタン → セッション削除して再描画
+# 「新しい問題を出す」ボタン
 if st.button("新しい問題を出す"):
-    del st.session_state.sample_events
-    st.experimental_rerun()
+    st.session_state.new_problem = True
+    # ページ全体が再実行されるので、次のif文で問題が更新される
+
