@@ -3,58 +3,61 @@ from streamlit_sortables import sort_items
 import pandas as pd
 import random
 
-# CSVから読み込み
+# Load CSV
 df = pd.read_csv('nenpyou.csv')
 
-# データの準備
-df = df.dropna(subset=['event', 'year'])  # 欠損除外
+# Clean data
+df = df.dropna(subset=['event', 'year'])
 df['year'] = df['year'].astype(int)
 
-# 紀元前／後の選択ラジオボタン
+st.title("📜 Timeline Sorting Game")
+st.write("Sort the historical events below in **chronological order**.")
+
+# Era filter
 era_filter = st.radio(
-    "時代を選んでください",
-    ["すべて", "紀元前のみ", "紀元後のみ"],
+    "Select era",
+    ["All", "BC only", "AD only"],
     horizontal=True
 )
 
-# ラジオボタンに応じてデータフィルタリング
-if era_filter == "紀元前のみ":
+# Filter by era
+if era_filter == "BC only":
     df = df[df['year'] < 0]
-elif era_filter == "紀元後のみ":
+elif era_filter == "AD only":
     df = df[df['year'] >= 0]
 
-# 範囲指定スライダー（現在のdfに基づく）
+# If no data after filtering
 if df.empty:
-    st.error("選択された条件ではデータが存在しません。")
+    st.error("No events available for the selected era.")
     st.stop()
 
+# Year range slider
 min_year = int(df['year'].min())
 max_year = int(df['year'].max())
-
 year_range = st.slider(
-    "出題する年の範囲を選んでください",
+    "Select year range for questions",
     min_value=min_year,
     max_value=max_year,
     value=(min_year, max_year)
 )
 
-# 範囲内の出来事を抽出
+# Filter by range
 filtered_df = df[(df['year'] >= year_range[0]) & (df['year'] <= year_range[1])]
 events = dict(zip(filtered_df['event'], filtered_df['year']))
 
-# 出題数の選択
-num_choices = st.selectbox("出題数を選んでください（最大10個）", options=list(range(2, 11)), index=4)
+# Number of choices
+num_choices = st.selectbox("Select number of events (up to 10)", options=list(range(2, 11)), index=4)
 
-# 範囲内に十分な数があるか確認
+# Check if enough events
 if len(events) < num_choices:
-    st.error(f"この条件では出来事が {len(events)} 件しかありません。出題数を減らしてください。")
+    st.error(f"Only {len(events)} events available in this range. Please choose fewer.")
     st.stop()
 
-# 新しい問題の管理
+# Track problem state
 if "new_problem" not in st.session_state:
     st.session_state.new_problem = True
 
-# 条件が変わったら再出題
+# Reset if filters change
 if (
     "last_num" not in st.session_state or
     st.session_state.last_num != num_choices or
@@ -68,7 +71,7 @@ if (
     st.session_state.last_range = year_range
     st.session_state.last_era = era_filter
 
-# 出題
+# Generate sample events
 if "sample_events" not in st.session_state or st.session_state.new_problem:
     st.session_state.sample_events = random.sample(list(events.items()), num_choices)
     st.session_state.new_problem = False
@@ -76,35 +79,35 @@ if "sample_events" not in st.session_state or st.session_state.new_problem:
 sample_events = st.session_state.sample_events
 event_names = [e[0] for e in sample_events]
 
-# 並び替え UI
+# Sortable UI
 sorted_events = sort_items(event_names, direction="vertical")
 
-# 判定ボタン
-if st.button("正解か不正解か判定"):
+# Check correctness
+if st.button("Check if correct"):
     correct_order = sorted(sample_events, key=lambda x: x[1])
     correct_names = [e[0] for e in correct_order]
 
     if sorted_events == correct_names:
-        st.success("🎉 正解です！")
+        st.success("🎉 Correct!")
     else:
-        st.error("❌ 間違いです。")
+        st.error("❌ Incorrect.")
 
-# 正しい位置の数を確認
-if st.button("正しい位置の数を確認"):
+# Show number of correct positions
+if st.button("Check number of correct positions"):
     correct_order = sorted(sample_events, key=lambda x: x[1])
     correct_names = [e[0] for e in correct_order]
 
     correct_count = sum([1 for user, correct in zip(sorted_events, correct_names) if user == correct])
 
-    st.info(f"✅ 現在の並びで {correct_count} 件が正しい位置にあります。")
+    st.info(f"✅ You have {correct_count} events in the correct position.")
 
-# 答え表示
-if st.button("詳細な正解を表示"):
+# Show correct answer
+if st.button("Show correct order"):
     correct_order = sorted(sample_events, key=lambda x: x[1])
-    st.write("正しい順番は：")
+    st.write("The correct order is:")
     for i, (event, year) in enumerate(correct_order, 1):
-        st.write(f"{i}. {event}（{year}年）")
+        st.write(f"{i}. {event} ({year})")
 
-# 再出題
-if st.button("新しい問題を出す"):
+# New problem
+if st.button("Generate new problem"):
     st.session_state.new_problem = True
