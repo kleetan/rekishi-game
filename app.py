@@ -3,52 +3,72 @@ from streamlit_sortables import sort_items
 import pandas as pd
 import random
 
-# CSVから出来事を読み込む
+# CSVから読み込み
 df = pd.read_csv('nenpyou.csv')
 
-# 年号の最小値・最大値を取得
+# データの準備
+df = df.dropna(subset=['event', 'year'])  # 欠損除外
+df['year'] = df['year'].astype(int)
+
+# 紀元前／後の選択ラジオボタン
+era_filter = st.radio(
+    "時代を選んでください",
+    ["すべて", "紀元前のみ", "紀元後のみ"],
+    horizontal=True
+)
+
+# ラジオボタンに応じてデータフィルタリング
+if era_filter == "紀元前のみ":
+    df = df[df['year'] < 0]
+elif era_filter == "紀元後のみ":
+    df = df[df['year'] >= 0]
+
+# 範囲指定スライダー（現在のdfに基づく）
+if df.empty:
+    st.error("選択された条件ではデータが存在しません。")
+    st.stop()
+
 min_year = int(df['year'].min())
 max_year = int(df['year'].max())
 
-st.title("🧠 歴史的出来事 並び替えゲーム")
-st.write("以下の出来事を **古い順** に並び替えてください。")
-
-# 出題範囲を選択（スライダー）
 year_range = st.slider(
-    "出題する時代の範囲を選んでください（年）",
+    "出題する年の範囲を選んでください",
     min_value=min_year,
     max_value=max_year,
     value=(min_year, max_year)
 )
 
-# 範囲内にある出来事だけ抽出
+# 範囲内の出来事を抽出
 filtered_df = df[(df['year'] >= year_range[0]) & (df['year'] <= year_range[1])]
 events = dict(zip(filtered_df['event'], filtered_df['year']))
 
-# 出題数の選択（2〜10個まで）
+# 出題数の選択
 num_choices = st.selectbox("出題数を選んでください（最大10個）", options=list(range(2, 11)), index=4)
 
-# エラーハンドリング：範囲内に出題数未満の出来事しかない場合
+# 範囲内に十分な数があるか確認
 if len(events) < num_choices:
-    st.error(f"この時代には出来事が {len(events)} 件しかありません。出題数を減らしてください。")
+    st.error(f"この条件では出来事が {len(events)} 件しかありません。出題数を減らしてください。")
     st.stop()
 
-# 新しい問題ボタンが押されたら新しく出題
+# 新しい問題の管理
 if "new_problem" not in st.session_state:
     st.session_state.new_problem = True
 
-# 問題数や範囲が変わったら再出題
+# 条件が変わったら再出題
 if (
     "last_num" not in st.session_state or
     st.session_state.last_num != num_choices or
     "last_range" not in st.session_state or
-    st.session_state.last_range != year_range
+    st.session_state.last_range != year_range or
+    "last_era" not in st.session_state or
+    st.session_state.last_era != era_filter
 ):
     st.session_state.new_problem = True
     st.session_state.last_num = num_choices
     st.session_state.last_range = year_range
+    st.session_state.last_era = era_filter
 
-# 初回またはリセット時にランダムに出題
+# 出題
 if "sample_events" not in st.session_state or st.session_state.new_problem:
     st.session_state.sample_events = random.sample(list(events.items()), num_choices)
     st.session_state.new_problem = False
@@ -56,10 +76,10 @@ if "sample_events" not in st.session_state or st.session_state.new_problem:
 sample_events = st.session_state.sample_events
 event_names = [e[0] for e in sample_events]
 
-# 並び替えUI
+# 並び替え UI
 sorted_events = sort_items(event_names, direction="vertical")
 
-# 正解か不正解かのみを判定するボタン
+# 判定ボタン
 if st.button("正解か不正解か判定"):
     correct_order = sorted(sample_events, key=lambda x: x[1])
     correct_names = [e[0] for e in correct_order]
@@ -69,15 +89,13 @@ if st.button("正解か不正解か判定"):
     else:
         st.error("❌ 間違いです。")
 
-# 正解の詳細を表示するボタン
+# 答え表示
 if st.button("詳細な正解を表示"):
     correct_order = sorted(sample_events, key=lambda x: x[1])
-    correct_names = [e[0] for e in correct_order]
-
     st.write("正しい順番は：")
-    for i, name in enumerate(correct_names, 1):
-        st.write(f"{i}. {name}（{events[name]}年）")
+    for i, (event, year) in enumerate(correct_order, 1):
+        st.write(f"{i}. {event}（{year}年）")
 
-# 新しい問題を出す
+# 再出題
 if st.button("新しい問題を出す"):
     st.session_state.new_problem = True
