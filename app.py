@@ -15,17 +15,18 @@ events = {
 st.title("🧠 歴史的出来事 並び替えゲーム")
 st.write("以下の出来事を **古い順** に並び替えてください。")
 
-# 初回だけランダムに4つ選ぶ（セッションに保存）
+# セッションに保存されたイベントがなければ作成
 if "sample_events" not in st.session_state:
     st.session_state.sample_events = random.sample(list(events.items()), 4)
 
+# 現在の出来事を取得
 sample_events = st.session_state.sample_events
 event_names = [e[0] for e in sample_events]
 
-# 並び替え用UI
+# 並び替えUI
 sorted_events = sort_items(event_names, direction="vertical")
 
-# 判定
+# 判定ボタン
 if st.button("判定する"):
     correct_order = sorted(sample_events, key=lambda x: x[1])
     correct_names = [e[0] for e in correct_order]
@@ -38,7 +39,7 @@ if st.button("判定する"):
         for i, name in enumerate(correct_names, 1):
             st.write(f"{i}. {name}（{events[name]}年）")
 
-# リセットボタン（新しい問題を出す）
+# 新しい問題ボタン → セッション削除して再描画
 if st.button("新しい問題を出す"):
-    st.session_state.sample_events = random.sample(list(events.items()), 4)
+    del st.session_state.sample_events
     st.experimental_rerun()
