@@ -89,6 +89,15 @@ if st.button("正解か不正解か判定"):
     else:
         st.error("❌ 間違いです。")
 
+# 正しい位置の数を確認
+if st.button("正しい位置の数を確認"):
+    correct_order = sorted(sample_events, key=lambda x: x[1])
+    correct_names = [e[0] for e in correct_order]
+
+    correct_count = sum([1 for user, correct in zip(sorted_events, correct_names) if user == correct])
+
+    st.info(f"✅ 現在の並びで {correct_count} 件が正しい位置にあります。")
+
 # 答え表示
 if st.button("詳細な正解を表示"):
     correct_order = sorted(sample_events, key=lambda x: x[1])
