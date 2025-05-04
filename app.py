@@ -11,7 +11,7 @@ df = df.dropna(subset=['event', 'year'])
 df['year'] = df['year'].astype(int)
 
 st.title("📜 Timeline Sorting Game")
-st.write("Sort the historical events below in **chronological order**. Unless otherwise specified, refers to the time of commencement")
+st.write("Sort the historical events below in **chronological order**.")
 
 # Era filter
 era_filter = st.radio(
