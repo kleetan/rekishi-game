@@ -14,10 +14,10 @@ df['year'] = df['year'].astype(int)
 left_col, center_col, right_col = st.columns([1, 2, 1])
 
 with left_col:
-    st.image("britain.jpg", use_container_width=True)
+    st.image("britain.png", use_container_width=True)
 
 with right_col:
-    st.image("soviet.jpg", use_container_width=True)
+    st.image("soviet.png", use_container_width=True)
 
 
 with center_col:
