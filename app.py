@@ -11,7 +11,7 @@ df = df.dropna(subset=['event', 'year'])
 df['year'] = df['year'].astype(int)
 
 # Layout: left image, center content, right image
-left_col, center_col, right_col = st.columns([1, 2, 1])
+left_col, center_col, right_col = st.columns([1, 4, 1])
 
 with left_col:
     st.image("britain.png", use_container_width=True)
