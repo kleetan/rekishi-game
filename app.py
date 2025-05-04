@@ -12,7 +12,7 @@ df['year'] = df['year'].astype(int)
 
 st.title("📜 Timeline Sorting Game")
 st.write("Sort the historical events below in **chronological order**.")
-
+st.write("Unless otherwise specified, refers to the time of commencement")
 # Era filter
 era_filter = st.radio(
     "Select era",
