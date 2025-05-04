@@ -14,10 +14,11 @@ df['year'] = df['year'].astype(int)
 left_col, center_col, right_col = st.columns([1, 2, 1])
 
 with left_col:
-    st.image("left_image.jpg", use_column_width=True)
+    st.image("britain.jpg", use_container_width=True)
 
 with right_col:
-    st.image("right_image.jpg", use_column_width=True)
+    st.image("soviet.jpg", use_container_width=True)
+
 
 with center_col:
     st.title("📜 Timeline Sorting Game")
