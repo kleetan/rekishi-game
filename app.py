@@ -143,11 +143,14 @@ with center_col:
 
         # New problem
         if st.button("Generate new problem"):
-            # Directly modify session state to avoid rerun delay
+            # Reset all necessary states for new problem generation
             st.session_state.new_problem = True
             st.session_state.start_time = time.time()  # Reset timer
-            st.session_state.sample_events = random.sample(list(events.items()), st.session_state.num_choices)  # Generate new problem immediately
-            st.experimental_rerun()  # Immediately rerun to display the new problem
+            st.session_state.sample_events = random.sample(list(events.items()), st.session_state.num_choices)  # Generate new problem
+            st.session_state.used_check_positions = False  # Reset check positions flag
+
+            # No rerun needed, state is updated directly
+            st.experimental_rerun()
 
         # End game and show average score
         if st.button("End Game"):
