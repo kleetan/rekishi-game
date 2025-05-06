@@ -94,7 +94,7 @@ with center_col:
             st.session_state.last_range = st.session_state.year_range
             st.session_state.last_era = st.session_state.era_filter
 
-        # Generate sample events
+        # Generate sample events if necessary
         if st.session_state.new_problem:
             st.session_state.sample_events = random.sample(list(events.items()), st.session_state.num_choices)
             st.session_state.new_problem = False
@@ -107,7 +107,7 @@ with center_col:
         sorted_events = sort_items(event_names, direction="vertical")
 
         # Timer
-        elapsed_time = time.time() - st.session_state.start_time  # No longer displayed
+        elapsed_time = time.time() - st.session_state.start_time  # Timer value for internal use, no need to display
 
         # Check correctness
         if st.button("Check if correct"):
@@ -143,9 +143,11 @@ with center_col:
 
         # New problem
         if st.button("Generate new problem"):
+            # Directly modify session state to avoid rerun delay
             st.session_state.new_problem = True
-            st.session_state.start_time = time.time()  # Reset the timer when new problem is generated
-            st.experimental_rerun()  # Force the rerun to immediately show the new problem
+            st.session_state.start_time = time.time()  # Reset timer
+            st.session_state.sample_events = random.sample(list(events.items()), st.session_state.num_choices)  # Generate new problem immediately
+            st.experimental_rerun()  # Immediately rerun to display the new problem
 
         # End game and show average score
         if st.button("End Game"):
