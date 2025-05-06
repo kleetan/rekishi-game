@@ -148,9 +148,7 @@ with center_col:
             st.session_state.start_time = time.time()  # Reset timer
             st.session_state.sample_events = random.sample(list(events.items()), st.session_state.num_choices)  # Generate new problem
             st.session_state.used_check_positions = False  # Reset check positions flag
-
             # No rerun needed, state is updated directly
-            st.experimental_rerun()
 
         # End game and show average score
         if st.button("End Game"):
@@ -160,4 +158,4 @@ with center_col:
             st.session_state.screen = "start"  # Go back to the start screen
             st.session_state.total_score = 0.0  # Reset total score after game ends
             st.session_state.games_played = 0  # Reset games played
-            st.experimental_rerun()  # Restart the app to reset all states
+            st.stop()
