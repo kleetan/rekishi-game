@@ -34,6 +34,10 @@ with center_col:
         st.session_state.used_check_positions = False
     if "new_problem" not in st.session_state:
         st.session_state.new_problem = True
+    if "total_score" not in st.session_state:
+        st.session_state.total_score = 0.0
+    if "games_played" not in st.session_state:
+        st.session_state.games_played = 0
 
     if st.session_state.screen == "start":
         # Select era, range, and number of events before starting
@@ -54,6 +58,7 @@ with center_col:
             st.session_state.used_check_positions = False
             st.session_state.score = 0.0  # Reset score when starting new game
             st.session_state.force_rerun = False  # Remove the force rerun flag
+            st.session_state.games_played += 1  # Increment the number of games played
 
         st.stop()
 
@@ -114,6 +119,7 @@ with center_col:
                     gained_score /= 2
                     st.info("Score halved because 'Check number of correct positions' was used.")
                 st.session_state.score += gained_score
+                st.session_state.total_score += gained_score
                 st.success(f"🏆 Score: {st.session_state.score:.2f}")
             else:
                 st.error("❌ Incorrect.")
@@ -136,3 +142,15 @@ with center_col:
         # New problem
         if st.button("Generate new problem"):
             st.session_state.new_problem = True
+            st.session_state.start_time = time.time()  # Reset the timer when new problem is generated
+
+        # End game and show average score
+        if st.button("End Game"):
+            if st.session_state.games_played > 0:
+                average_score = st.session_state.total_score / st.session_state.games_played
+                st.write(f"🏅 Average Score: {average_score:.2f}")
+            st.session_state.screen = "start"  # Go back to the start screen
+            st.session_state.total_score = 0.0  # Reset total score after game ends
+            st.session_state.games_played = 0  # Reset games played
+            st.experimental_rerun()  # Restart the app to reset all states
+
