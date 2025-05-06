@@ -53,88 +53,86 @@ with center_col:
             st.session_state.new_problem = True
             st.session_state.used_check_positions = False
             st.session_state.score = 0.0  # Reset score when starting new game
-            st.session_state.force_rerun = True
+            st.session_state.force_rerun = False  # Remove the force rerun flag
+
         st.stop()
 
-    # Rerun if needed
-    if st.session_state.get("force_rerun", False):
-        st.session_state.force_rerun = False
-        st.experimental_rerun()
+    # If it's the "game" screen, proceed with the game logic
+    if st.session_state.screen == "game":
+        # Filter data based on selected era
+        if st.session_state.era_filter == "BC only":
+            df = df[df['year'] < 0]
+        elif st.session_state.era_filter == "AD only":
+            df = df[df['year'] >= 0]
 
-    # Filter data based on selected era
-    if st.session_state.era_filter == "BC only":
-        df = df[df['year'] < 0]
-    elif st.session_state.era_filter == "AD only":
-        df = df[df['year'] >= 0]
+        # If no data after filtering
+        if df.empty:
+            st.error("No events available for the selected era.")
+            st.stop()
 
-    # If no data after filtering
-    if df.empty:
-        st.error("No events available for the selected era.")
-        st.stop()
+        # Filter by selected year range
+        filtered_df = df[(df['year'] >= st.session_state.year_range[0]) & (df['year'] <= st.session_state.year_range[1])]
+        events = dict(zip(filtered_df['event'], filtered_df['year']))
 
-    # Filter by selected year range
-    filtered_df = df[(df['year'] >= st.session_state.year_range[0]) & (df['year'] <= st.session_state.year_range[1])]
-    events = dict(zip(filtered_df['event'], filtered_df['year']))
+        # If not enough events are available
+        if len(events) < st.session_state.num_choices:
+            st.error(f"Only {len(events)} events available. Please choose fewer.")
+            st.stop()
 
-    # If not enough events are available
-    if len(events) < st.session_state.num_choices:
-        st.error(f"Only {len(events)} events available. Please choose fewer.")
-        st.stop()
+        # Reset problem if needed
+        if "last_num" not in st.session_state or st.session_state.last_num != st.session_state.num_choices or "last_range" not in st.session_state or st.session_state.last_range != st.session_state.year_range or "last_era" not in st.session_state or st.session_state.last_era != st.session_state.era_filter:
+            st.session_state.new_problem = True
+            st.session_state.last_num = st.session_state.num_choices
+            st.session_state.last_range = st.session_state.year_range
+            st.session_state.last_era = st.session_state.era_filter
 
-    # Reset problem if needed
-    if "last_num" not in st.session_state or st.session_state.last_num != st.session_state.num_choices or "last_range" not in st.session_state or st.session_state.last_range != st.session_state.year_range or "last_era" not in st.session_state or st.session_state.last_era != st.session_state.era_filter:
-        st.session_state.new_problem = True
-        st.session_state.last_num = st.session_state.num_choices
-        st.session_state.last_range = st.session_state.year_range
-        st.session_state.last_era = st.session_state.era_filter
+        # Generate sample events
+        if st.session_state.new_problem:
+            st.session_state.sample_events = random.sample(list(events.items()), st.session_state.num_choices)
+            st.session_state.new_problem = False
+            st.session_state.used_check_positions = False
 
-    # Generate sample events
-    if st.session_state.new_problem:
-        st.session_state.sample_events = random.sample(list(events.items()), st.session_state.num_choices)
-        st.session_state.new_problem = False
-        st.session_state.used_check_positions = False
+        sample_events = st.session_state.sample_events
+        event_names = [e[0] for e in sample_events]
 
-    sample_events = st.session_state.sample_events
-    event_names = [e[0] for e in sample_events]
+        # Sortable UI
+        sorted_events = sort_items(event_names, direction="vertical")
 
-    # Sortable UI
-    sorted_events = sort_items(event_names, direction="vertical")
+        # Timer
+        elapsed_time = time.time() - st.session_state.start_time
+        st.metric("⏱️ Time Elapsed (sec)", f"{elapsed_time:.1f}")
 
-    # Timer
-    elapsed_time = time.time() - st.session_state.start_time
-    st.metric("⏱️ Time Elapsed (sec)", f"{elapsed_time:.1f}")
+        # Check correctness
+        if st.button("Check if correct"):
+            correct_order = sorted(sample_events, key=lambda x: x[1])
+            correct_names = [e[0] for e in correct_order]
 
-    # Check correctness
-    if st.button("Check if correct"):
-        correct_order = sorted(sample_events, key=lambda x: x[1])
-        correct_names = [e[0] for e in correct_order]
+            if sorted_events == correct_names:
+                st.success("🎉 Correct!")
+                gained_score = 100 / elapsed_time
+                if st.session_state.used_check_positions:
+                    gained_score /= 2
+                    st.info("Score halved because 'Check number of correct positions' was used.")
+                st.session_state.score += gained_score
+                st.success(f"🏆 Score: {st.session_state.score:.2f}")
+            else:
+                st.error("❌ Incorrect.")
 
-        if sorted_events == correct_names:
-            st.success("🎉 Correct!")
-            gained_score = 100 / elapsed_time
-            if st.session_state.used_check_positions:
-                gained_score /= 2
-                st.info("Score halved because 'Check number of correct positions' was used.")
-            st.session_state.score += gained_score
-            st.success(f"🏆 Score: {st.session_state.score:.2f}")
-        else:
-            st.error("❌ Incorrect.")
+        # Show number of correct positions
+        if st.button("Check number of correct positions"):
+            correct_order = sorted(sample_events, key=lambda x: x[1])
+            correct_names = [e[0] for e in correct_order]
+            correct_count = sum([1 for user, correct in zip(sorted_events, correct_names) if user == correct])
+            st.info(f"✅ You have {correct_count} events in the correct position.")
+            st.session_state.used_check_positions = True
 
-    # Show number of correct positions
-    if st.button("Check number of correct positions"):
-        correct_order = sorted(sample_events, key=lambda x: x[1])
-        correct_names = [e[0] for e in correct_order]
-        correct_count = sum([1 for user, correct in zip(sorted_events, correct_names) if user == correct])
-        st.info(f"✅ You have {correct_count} events in the correct position.")
-        st.session_state.used_check_positions = True
+        # Show correct answer
+        if st.button("Show correct order"):
+            correct_order = sorted(sample_events, key=lambda x: x[1])
+            st.write("The correct order is:")
+            for i, (event, year) in enumerate(correct_order, 1):
+                st.write(f"{i}. {event} ({year})")
 
-    # Show correct answer
-    if st.button("Show correct order"):
-        correct_order = sorted(sample_events, key=lambda x: x[1])
-        st.write("The correct order is:")
-        for i, (event, year) in enumerate(correct_order, 1):
-            st.write(f"{i}. {event} ({year})")
-
-    # New problem
-    if st.button("Generate new problem"):
-        st.session_state.new_problem = True
+        # New problem
+        if st.button("Generate new problem"):
+            st.session_state.new_problem = True
