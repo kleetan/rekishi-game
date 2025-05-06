@@ -53,7 +53,7 @@ with center_col:
             st.session_state.era_filter = era_filter
             st.session_state.year_range = year_range
             st.session_state.num_choices = num_choices
-            st.session_state.start_time = time.time()
+            st.session_state.start_time = time.time()  # Start the timer when the game starts
             st.session_state.new_problem = True
             st.session_state.used_check_positions = False
             st.session_state.score = 0.0  # Reset score when starting new game
@@ -153,4 +153,3 @@ with center_col:
             st.session_state.total_score = 0.0  # Reset total score after game ends
             st.session_state.games_played = 0  # Reset games played
             st.experimental_rerun()  # Restart the app to reset all states
-
