@@ -4,10 +4,12 @@ import pandas as pd
 import random
 import time
 
-# Load CSV
-df = pd.read_csv('nenpyou.csv')
-df = df.dropna(subset=['event', 'year'])
-df['year'] = df['year'].astype(int)
+# Load CSV (Only once)
+if 'df' not in st.session_state:
+    df = pd.read_csv('nenpyou.csv')
+    df = df.dropna(subset=['event', 'year'])
+    df['year'] = df['year'].astype(int)
+    st.session_state.df = df  # Store in session state to prevent reloading every time
 
 # Layout: left image, center content, right image
 left_col, center_col, right_col = st.columns([1, 15, 1])
@@ -42,8 +44,8 @@ with center_col:
     if st.session_state.screen == "start":
         # Select era, range, and number of events before starting
         era_filter = st.radio("Select era", ["All", "BC only", "AD only"], horizontal=True)
-        min_year = int(df['year'].min())
-        max_year = int(df['year'].max())
+        min_year = int(st.session_state.df['year'].min())
+        max_year = int(st.session_state.df['year'].max())
         year_range = st.slider("Select year range", min_year, max_year, (min_year, max_year))
         num_choices = st.selectbox("Select number of events (up to 10)", options=list(range(2, 11)), index=4)
 
@@ -66,9 +68,9 @@ with center_col:
     if st.session_state.screen == "game":
         # Filter data based on selected era
         if st.session_state.era_filter == "BC only":
-            df = df[df['year'] < 0]
+            df = st.session_state.df[st.session_state.df['year'] < 0]
         elif st.session_state.era_filter == "AD only":
-            df = df[df['year'] >= 0]
+            df = st.session_state.df[st.session_state.df['year'] >= 0]
 
         # If no data after filtering
         if df.empty:
@@ -104,8 +106,7 @@ with center_col:
         sorted_events = sort_items(event_names, direction="vertical")
 
         # Timer
-        elapsed_time = time.time() - st.session_state.start_time
-      
+        elapsed_time = time.time() - st.session_state.start_time  # No longer displayed
 
         # Check correctness
         if st.button("Check if correct"):
