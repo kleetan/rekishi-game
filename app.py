@@ -40,8 +40,13 @@ with center_col:
         if st.button("Start Game"):
             st.session_state.game_started = True
             st.session_state.start_time = time.time()
-            st.experimental_rerun()
+            st.session_state.force_rerun = True
         st.stop()
+
+    # rerun if needed
+    if st.session_state.get("force_rerun", False):
+        st.session_state.force_rerun = False
+        st.experimental_rerun()
 
     # Era filter
     era_filter = st.radio(
@@ -153,3 +158,4 @@ with center_col:
         st.session_state.new_problem = True
         st.session_state.game_started = False
         st.experimental_rerun()
+
