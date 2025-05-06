@@ -145,6 +145,7 @@ with center_col:
         if st.button("Generate new problem"):
             st.session_state.new_problem = True
             st.session_state.start_time = time.time()  # Reset the timer when new problem is generated
+            st.experimental_rerun()  # Force the rerun to immediately show the new problem
 
         # End game and show average score
         if st.button("End Game"):
