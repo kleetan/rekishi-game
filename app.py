@@ -36,57 +36,63 @@ with center_col:
         st.session_state.new_problem = True
 
     if st.session_state.screen == "start":
+        # Select era, range, and number of events before starting
+        era_filter = st.radio("Select era", ["All", "BC only", "AD only"], horizontal=True)
+        min_year = int(df['year'].min())
+        max_year = int(df['year'].max())
+        year_range = st.slider("Select year range", min_year, max_year, (min_year, max_year))
+        num_choices = st.selectbox("Select number of events (up to 10)", options=list(range(2, 11)), index=4)
+
+        # Start the game button
         if st.button("Start Game"):
             st.session_state.screen = "game"
+            st.session_state.era_filter = era_filter
+            st.session_state.year_range = year_range
+            st.session_state.num_choices = num_choices
             st.session_state.start_time = time.time()
             st.session_state.new_problem = True
+            st.session_state.used_check_positions = False
+            st.session_state.score = 0.0  # Reset score when starting new game
+            st.session_state.force_rerun = True
         st.stop()
 
-    # Era filter
-    era_filter = st.radio("Select era", ["All", "BC only", "AD only"], horizontal=True)
+    # Rerun if needed
+    if st.session_state.get("force_rerun", False):
+        st.session_state.force_rerun = False
+        st.experimental_rerun()
 
-    if era_filter == "BC only":
+    # Filter data based on selected era
+    if st.session_state.era_filter == "BC only":
         df = df[df['year'] < 0]
-    elif era_filter == "AD only":
+    elif st.session_state.era_filter == "AD only":
         df = df[df['year'] >= 0]
 
+    # If no data after filtering
     if df.empty:
         st.error("No events available for the selected era.")
         st.stop()
 
-    # Year range
-    min_year = int(df['year'].min())
-    max_year = int(df['year'].max())
-    year_range = st.slider("Select year range", min_year, max_year, (min_year, max_year))
-
-    filtered_df = df[(df['year'] >= year_range[0]) & (df['year'] <= year_range[1])]
+    # Filter by selected year range
+    filtered_df = df[(df['year'] >= st.session_state.year_range[0]) & (df['year'] <= st.session_state.year_range[1])]
     events = dict(zip(filtered_df['event'], filtered_df['year']))
 
-    num_choices = st.selectbox("Select number of events (up to 10)", options=list(range(2, 11)), index=4)
-
-    if len(events) < num_choices:
+    # If not enough events are available
+    if len(events) < st.session_state.num_choices:
         st.error(f"Only {len(events)} events available. Please choose fewer.")
         st.stop()
 
     # Reset problem if needed
-    if (
-        "last_num" not in st.session_state or
-        st.session_state.last_num != num_choices or
-        "last_range" not in st.session_state or
-        st.session_state.last_range != year_range or
-        "last_era" not in st.session_state or
-        st.session_state.last_era != era_filter
-    ):
+    if "last_num" not in st.session_state or st.session_state.last_num != st.session_state.num_choices or "last_range" not in st.session_state or st.session_state.last_range != st.session_state.year_range or "last_era" not in st.session_state or st.session_state.last_era != st.session_state.era_filter:
         st.session_state.new_problem = True
-        st.session_state.last_num = num_choices
-        st.session_state.last_range = year_range
-        st.session_state.last_era = era_filter
+        st.session_state.last_num = st.session_state.num_choices
+        st.session_state.last_range = st.session_state.year_range
+        st.session_state.last_era = st.session_state.era_filter
 
+    # Generate sample events
     if st.session_state.new_problem:
-        st.session_state.sample_events = random.sample(list(events.items()), num_choices)
-        st.session_state.used_check_positions = False
+        st.session_state.sample_events = random.sample(list(events.items()), st.session_state.num_choices)
         st.session_state.new_problem = False
-        st.session_state.start_time = time.time()  # タイマーリセット
+        st.session_state.used_check_positions = False
 
     sample_events = st.session_state.sample_events
     event_names = [e[0] for e in sample_events]
