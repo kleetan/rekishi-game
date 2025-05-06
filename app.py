@@ -19,7 +19,6 @@ with left_col:
 with right_col:
     st.image("soviet.png", use_container_width=True)
 
-
 with center_col:
     st.title("📜 Timeline Sorting Game")
     st.write("Sort the historical events below in **chronological order**.")
@@ -91,8 +90,23 @@ with center_col:
     sample_events = st.session_state.sample_events
     event_names = [e[0] for e in sample_events]
 
-    # Sortable UI
+    # Initialize session state for storing visibility of text (true/false)
+    if "visibility" not in st.session_state:
+        st.session_state.visibility = {event: False for event in event_names}
+
+    # Function to toggle text visibility on click
+    def toggle_visibility(event):
+        st.session_state.visibility[event] = not st.session_state.visibility[event]
+
+    # Sortable UI with click-to-toggle text visibility
     sorted_events = sort_items(event_names, direction="vertical")
+
+    for event in sorted_events:
+        # Display button to toggle text visibility
+        if st.session_state.visibility[event]:
+            st.write(event)  # Show event text if it's visible
+        else:
+            st.button(event, on_click=toggle_visibility, args=(event,))  # Button to toggle visibility
 
     # Check correctness
     if st.button("Check if correct"):
@@ -123,4 +137,3 @@ with center_col:
     # New problem
     if st.button("Generate new problem"):
         st.session_state.new_problem = True
-
