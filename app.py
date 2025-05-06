@@ -6,8 +6,6 @@ import time
 
 # Load CSV
 df = pd.read_csv('nenpyou.csv')
-
-# Clean data
 df = df.dropna(subset=['event', 'year'])
 df['year'] = df['year'].astype(int)
 
@@ -26,73 +24,51 @@ with center_col:
     st.caption("Unless otherwise specified, refers to the time of commencement.")
 
     # Initialize session state
-    if "game_started" not in st.session_state:
-        st.session_state.game_started = False
+    if "screen" not in st.session_state:
+        st.session_state.screen = "start"
     if "start_time" not in st.session_state:
         st.session_state.start_time = 0.0
     if "score" not in st.session_state:
         st.session_state.score = 0.0
     if "used_check_positions" not in st.session_state:
         st.session_state.used_check_positions = False
+    if "new_problem" not in st.session_state:
+        st.session_state.new_problem = True
 
-    # Start game button
-    if not st.session_state.game_started:
+    if st.session_state.screen == "start":
         if st.button("Start Game"):
-            st.session_state.game_started = True
+            st.session_state.screen = "game"
             st.session_state.start_time = time.time()
-            st.session_state.force_rerun = True
+            st.session_state.new_problem = True
         st.stop()
 
-    # rerun if needed
-    if st.session_state.get("force_rerun", False):
-        st.session_state.force_rerun = False
-        st.experimental_rerun()
-
     # Era filter
-    era_filter = st.radio(
-        "Select era",
-        ["All", "BC only", "AD only"],
-        horizontal=True
-    )
+    era_filter = st.radio("Select era", ["All", "BC only", "AD only"], horizontal=True)
 
-    # Filter by era
     if era_filter == "BC only":
         df = df[df['year'] < 0]
     elif era_filter == "AD only":
         df = df[df['year'] >= 0]
 
-    # If no data after filtering
     if df.empty:
         st.error("No events available for the selected era.")
         st.stop()
 
-    # Year range slider
+    # Year range
     min_year = int(df['year'].min())
     max_year = int(df['year'].max())
-    year_range = st.slider(
-        "Select year range for questions",
-        min_value=min_year,
-        max_value=max_year,
-        value=(min_year, max_year)
-    )
+    year_range = st.slider("Select year range", min_year, max_year, (min_year, max_year))
 
-    # Filter by range
     filtered_df = df[(df['year'] >= year_range[0]) & (df['year'] <= year_range[1])]
     events = dict(zip(filtered_df['event'], filtered_df['year']))
 
-    # Number of choices
     num_choices = st.selectbox("Select number of events (up to 10)", options=list(range(2, 11)), index=4)
 
-    # Check if enough events
     if len(events) < num_choices:
-        st.error(f"Only {len(events)} events available in this range. Please choose fewer.")
+        st.error(f"Only {len(events)} events available. Please choose fewer.")
         st.stop()
 
-    # Track problem state
-    if "new_problem" not in st.session_state:
-        st.session_state.new_problem = True
-
-    # Reset if filters change
+    # Reset problem if needed
     if (
         "last_num" not in st.session_state or
         st.session_state.last_num != num_choices or
@@ -106,11 +82,11 @@ with center_col:
         st.session_state.last_range = year_range
         st.session_state.last_era = era_filter
 
-    # Generate sample events
-    if "sample_events" not in st.session_state or st.session_state.new_problem:
+    if st.session_state.new_problem:
         st.session_state.sample_events = random.sample(list(events.items()), num_choices)
-        st.session_state.new_problem = False
         st.session_state.used_check_positions = False
+        st.session_state.new_problem = False
+        st.session_state.start_time = time.time()  # タイマーリセット
 
     sample_events = st.session_state.sample_events
     event_names = [e[0] for e in sample_events]
@@ -118,7 +94,7 @@ with center_col:
     # Sortable UI
     sorted_events = sort_items(event_names, direction="vertical")
 
-    # Show timer
+    # Timer
     elapsed_time = time.time() - st.session_state.start_time
     st.metric("⏱️ Time Elapsed (sec)", f"{elapsed_time:.1f}")
 
@@ -156,6 +132,3 @@ with center_col:
     # New problem
     if st.button("Generate new problem"):
         st.session_state.new_problem = True
-        st.session_state.game_started = False
-        st.experimental_rerun()
-
