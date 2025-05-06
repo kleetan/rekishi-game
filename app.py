@@ -67,10 +67,11 @@ with center_col:
     # If it's the "game" screen, proceed with the game logic
     if st.session_state.screen == "game":
         # Filter data based on selected era
+        df = st.session_state.df  # Use session state df instead of reloading
         if st.session_state.era_filter == "BC only":
-            df = st.session_state.df[st.session_state.df['year'] < 0]
+            df = df[df['year'] < 0]
         elif st.session_state.era_filter == "AD only":
-            df = st.session_state.df[st.session_state.df['year'] >= 0]
+            df = df[df['year'] >= 0]
 
         # If no data after filtering
         if df.empty:
