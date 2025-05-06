@@ -105,7 +105,7 @@ with center_col:
 
         # Timer
         elapsed_time = time.time() - st.session_state.start_time
-        st.metric("⏱️ Time Elapsed (sec)", f"{elapsed_time:.1f}")
+      
 
         # Check correctness
         if st.button("Check if correct"):
